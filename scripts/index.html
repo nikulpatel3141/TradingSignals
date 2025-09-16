@@ -1,0 +1,22 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Connect Four</title>
+  </head>
+  <body>
+    <div class="board"></div>
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        const websocket = new WebSocket("ws://localhost:8001/");
+  
+        websocket.addEventListener("message", ({ data }) => {
+          const event = JSON.parse(data);
+          console.log(event);
+          // do something with event
+        });
+  
+      });
+    </script>
+  </body>
+</html>

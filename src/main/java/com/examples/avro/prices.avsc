@@ -1,0 +1,28 @@
+{
+    "namespace": "example.prices",
+    "type": "record",
+    "name": "prices",
+    "fields": [
+        {"name": "ticker", "type": "string"},
+        {"name": "ISIN", "type": ["string", "null"]},
+        {"name": "status", "type": {
+            "type": "enum",
+            "name": "statusEnum",
+            "symbols": [
+                "LISTED",
+                "OTC"
+            ]
+        }},
+        {
+            "name": "price",
+            "type": {
+                "type": "record",
+                "name": "priceRecord",
+                "fields": [
+                    {"name": "open", "type": "double"},
+                    {"name": "close", "type": "double"}      
+                ]
+            }
+        }
+    ]
+}
