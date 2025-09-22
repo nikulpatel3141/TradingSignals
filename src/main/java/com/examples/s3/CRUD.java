@@ -1,5 +1,7 @@
 package com.examples.s3;
 
+import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.regions.Region;
@@ -8,6 +10,7 @@ import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,8 +26,7 @@ public class CRUD {
     public static byte[] readLocalFile() throws IOException {
         Path localFile = Paths.get(CRUD.localFile);
         var inputStream = Files.newInputStream(localFile);
-        var data = inputStream.readAllBytes();
-        return data;
+        return inputStream.readAllBytes();
     }
 
     public static Boolean createBucket() throws ExecutionException, InterruptedException {
@@ -82,6 +84,15 @@ public class CRUD {
         return ref.result;
     }
 
+    public static void readParquet(byte[] parquetBytes) throws IOException {
+        var bufferAllocator = new RootAllocator();
+        var reader = new ArrowStreamReader(new ByteArrayInputStream(parquetBytes), bufferAllocator);
+
+        while (reader.loadNextBatch()) {
+            System.out.println(reader.getVectorSchemaRoot().contentToTSVString());
+        }
+    }
+
     static S3AsyncClient getS3AsyncClient(){
         return S3AsyncClient.builder().region(Region.EU_NORTH_1).build();
     }
@@ -93,6 +104,6 @@ public class CRUD {
         uploadData();
 
         var data = downloadData();
-
+        readParquet(data);
     }
 }
