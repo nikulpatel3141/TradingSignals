@@ -1,7 +1,26 @@
 package com.examples.s3;
 
+import org.apache.arrow.dataset.file.FileFormat;
+import org.apache.arrow.dataset.file.FileSystemDatasetFactory;
+import org.apache.arrow.dataset.jni.NativeDatasetFactory;
+import org.apache.arrow.dataset.jni.NativeMemoryPool;
+import org.apache.arrow.dataset.source.Dataset;
+import org.apache.arrow.dataset.source.DatasetFactory;
+import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.vector.ipc.ArrowStreamReader;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.parquet.avro.AvroParquetReader;
+import org.apache.parquet.column.page.PageReadStore;
+import org.apache.parquet.example.data.simple.SimpleGroup;
+import org.apache.parquet.example.data.simple.convert.GroupRecordConverter;
+import org.apache.parquet.hadoop.ParquetFileReader;
+import org.apache.parquet.hadoop.ParquetReader;
+import org.apache.parquet.hadoop.example.GroupReadSupport;
+import org.apache.parquet.io.ColumnIOFactory;
+import org.apache.parquet.io.InputFile;
+import org.apache.parquet.io.MessageColumnIO;
+import org.apache.parquet.io.RecordReader;
+import org.apache.parquet.schema.MessageType;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.regions.Region;
@@ -11,10 +30,15 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.module.Configuration;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
@@ -85,12 +109,23 @@ public class CRUD {
     }
 
     public static void readParquet(byte[] parquetBytes) throws IOException {
-        var bufferAllocator = new RootAllocator();
-        var reader = new ArrowStreamReader(new ByteArrayInputStream(parquetBytes), bufferAllocator);
-
-        while (reader.loadNextBatch()) {
-            System.out.println(reader.getVectorSchemaRoot().contentToTSVString());
-        }
+//        List<SimpleGroup> simpleGroups = new ArrayList<>();
+//        ParquetStream inputFile = new ParquetStream("my-stream", parquetBytes);
+//
+//        // Configure Parquet reader
+//        Configuration conf = new Configuration();
+//        ParquetReader<SimpleGroup> reader = ParquetReader.builder(new GroupReadSupport(), inputFile)
+//                .withConf(conf)
+//                .build();
+//
+//        // Read all records
+//        SimpleGroup record;
+//        while ((record = reader.read()) != null) {
+//            records.add(record);
+//        }
+//
+//        reader.close();
+        return;
     }
 
     static S3AsyncClient getS3AsyncClient(){
