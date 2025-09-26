@@ -29,10 +29,9 @@ final class SampleData {
         ));
     }
 
-    public static List<ArrowRecordBatch> getBatches(){
+    public static List<ArrowRecordBatch> getBatches(BufferAllocator allocator){
         List<ArrowRecordBatch> batches = new ArrayList<>();
         try (
-            BufferAllocator allocator = new RootAllocator();
             var schemaRoot = VectorSchemaRoot.create(getSchema(), allocator);
             var nameVector = (VarCharVector) schemaRoot.getVector("name");
             var ageVector = (IntVector) schemaRoot.getVector("age");
@@ -44,22 +43,19 @@ final class SampleData {
             nameVector.set(0, "Jay".getBytes(StandardCharsets.UTF_8));
 
             ageVector.set(1, 28);
-            nameVector.set(0, "Reian".getBytes(StandardCharsets.UTF_8));
+            nameVector.set(1, "Reian".getBytes(StandardCharsets.UTF_8));
 
             schemaRoot.setRowCount(2);
 
             var unloader = new VectorUnloader(schemaRoot);
-            try (var batch = unloader.getRecordBatch()) {
-                batches.add(batch);
-            }
-
+            batches.add(unloader.getRecordBatch());
         }
         return batches;
     }
 
-    public static Dataset getDataset(){
+    public static Dataset getDataset(BufferAllocator allocator){
         var schema = getSchema();
-        var batches = getBatches();
+        var batches = getBatches(allocator);
         return new Dataset(batches, schema, 2);
     }
 }
@@ -81,7 +77,7 @@ public class FlightServerExample extends NoOpFlightProducer implements AutoClose
 
         var datasets = new ConcurrentHashMap<FlightDescriptor, Dataset>();
 
-        var sampleData = SampleData.getDataset();
+        var sampleData = SampleData.getDataset(allocator);
         datasets.put(FlightDescriptor.path("sampleData"), sampleData);
 
         var serverBuilder = FlightServer.builder(allocator, location, new FlightServerExample(allocator, location, datasets));
@@ -114,6 +110,26 @@ public class FlightServerExample extends NoOpFlightProducer implements AutoClose
                 /*bytes=*/-1,
                 datasets.get(descriptor).numRows()
         );
+    }
+
+    @Override
+    public void getStream(CallContext context, Ticket ticket, ServerStreamListener listener){
+        var flightDescriptor = FlightDescriptor.path(new String(ticket.getBytes(), StandardCharsets.UTF_8));
+        var dataset = datasets.get(flightDescriptor);
+        if (dataset == null) {
+            throw CallStatus.NOT_FOUND.withDescription("Descriptor not implemented").toRuntimeException();
+        }
+        try (
+            var root = VectorSchemaRoot.create(dataset.schema(), allocator)
+        ) {
+            var loader = new VectorLoader(root);
+            listener.start(root);
+            for (var batch : dataset.batches()){
+                loader.load(batch);
+                listener.putNext();
+            }
+            listener.completed();
+        }
     }
 
     @Override

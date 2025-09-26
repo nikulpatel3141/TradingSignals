@@ -6,6 +6,7 @@ import org.apache.arrow.flight.FlightDescriptor;
 import org.apache.arrow.flight.Location;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.types.pojo.Field;
 
 public class FlightClientExample {
     static void main(String[] args) throws Exception {
@@ -25,8 +26,8 @@ public class FlightClientExample {
                     var batch = 0;
                     while (dataStream.next()){
                         ++batch;
-                        System.out.println("Received batch " + batch);
-                        System.out.println(root.toString());
+                        System.out.println("Got batch " + batch);
+                        System.out.println(root.contentToTSVString());
                     }
                 }
             }
