@@ -1,9 +1,6 @@
 package com.examples.flight;
 
-import org.apache.arrow.flight.FlightDescriptor;
-import org.apache.arrow.flight.FlightServer;
-import org.apache.arrow.flight.Location;
-import org.apache.arrow.flight.NoOpFlightProducer;
+import org.apache.arrow.flight.*;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.util.AutoCloseables;
@@ -74,11 +71,17 @@ public class FlightServerExample extends NoOpFlightProducer implements AutoClose
 
         try (var server = serverBuilder.build()) {
             server.start();
+            System.out.println("Flight server listening on port " + server.getPort());
+            server.awaitTermination();
         } catch (InterruptedException | IOException e) {
             throw new RuntimeException(e);
         }
     }
 
+    @Override
+    public void listFlights(CallContext context, Criteria criteria, StreamListener<FlightInfo> listener){
+        listener.onCompleted();
+    }
 
     @Override
     public void close() throws Exception {
