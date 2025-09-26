@@ -4,9 +4,7 @@ import org.apache.arrow.flight.*;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.util.AutoCloseables;
-import org.apache.arrow.vector.IntVector;
-import org.apache.arrow.vector.VarCharVector;
-import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.*;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Schema;
@@ -17,6 +15,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -26,7 +25,7 @@ final class SampleData {
     public static Schema getSchema(){
         return new Schema(Arrays.asList(
                 new Field("name", FieldType.notNullable(new ArrowType.Utf8()), null),
-                new Field("age", FieldType.notNullable(new ArrowType.Int(32, false)), null)
+                new Field("age", FieldType.notNullable(new ArrowType.Int(32, true)), null)
         ));
     }
 
@@ -48,8 +47,20 @@ final class SampleData {
             nameVector.set(0, "Reian".getBytes(StandardCharsets.UTF_8));
 
             schemaRoot.setRowCount(2);
+
+            var unloader = new VectorUnloader(schemaRoot);
+            try (var batch = unloader.getRecordBatch()) {
+                batches.add(batch);
+            }
+
         }
         return batches;
+    }
+
+    public static Dataset getDataset(){
+        var schema = getSchema();
+        var batches = getBatches();
+        return new Dataset(batches, schema, 2);
     }
 }
 
@@ -67,7 +78,13 @@ public class FlightServerExample extends NoOpFlightProducer implements AutoClose
     static void main(String[] args){
         var allocator = new RootAllocator();
         var location = Location.forGrpcInsecure("0.0.0.0", 33333);
-        var serverBuilder = FlightServer.builder(allocator, location, new FlightServerExample(allocator, location, new ConcurrentHashMap<>()));
+
+        var datasets = new ConcurrentHashMap<FlightDescriptor, Dataset>();
+
+        var sampleData = SampleData.getDataset();
+        datasets.put(FlightDescriptor.path("sampleData"), sampleData);
+
+        var serverBuilder = FlightServer.builder(allocator, location, new FlightServerExample(allocator, location, datasets));
 
         try (var server = serverBuilder.build()) {
             server.start();
@@ -80,7 +97,23 @@ public class FlightServerExample extends NoOpFlightProducer implements AutoClose
 
     @Override
     public void listFlights(CallContext context, Criteria criteria, StreamListener<FlightInfo> listener){
+        datasets.keySet().forEach(((flightDescriptor) -> listener.onNext(getFlightInfo(null, flightDescriptor))));
         listener.onCompleted();
+    }
+
+    @Override
+    public FlightInfo getFlightInfo(CallContext context, FlightDescriptor descriptor) {
+        FlightEndpoint flightEndpoint = new FlightEndpoint(
+            new Ticket(descriptor.getPath().getFirst().getBytes(StandardCharsets.UTF_8)),
+            location
+        );
+        return new FlightInfo(
+                datasets.get(descriptor).schema(),
+                descriptor,
+                Collections.singletonList(flightEndpoint),
+                /*bytes=*/-1,
+                datasets.get(descriptor).numRows()
+        );
     }
 
     @Override
