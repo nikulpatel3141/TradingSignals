@@ -29,6 +29,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.18.0</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.eclipse.jetty.websocket</groupId>
             <artifactId>jetty-websocket-jetty-client</artifactId>
             <version>12.1.1</version>
