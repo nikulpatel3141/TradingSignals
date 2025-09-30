@@ -9,8 +9,6 @@ import org.eclipse.jetty.websocket.client.WebSocketClient;
 import java.net.URI;
 
 
-//record KrakenResponse()
-
 record SubscribeMessage(String method, SubscribeParams params){
     record SubscribeParams(String channel, String[] symbol){}
 }
