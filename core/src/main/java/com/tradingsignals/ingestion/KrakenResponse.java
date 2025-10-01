@@ -11,7 +11,8 @@ import java.time.Instant;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record KrakenResponse(String channel, @Nullable String type, @Nullable CoinData[] data){
-    static final ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
+    static final ObjectMapper mapper = new ObjectMapper()
+            .findAndRegisterModules();  //  https://github.com/FasterXML/jackson-modules-java8?tab=readme-ov-file#registering-modules
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     record CoinData(
