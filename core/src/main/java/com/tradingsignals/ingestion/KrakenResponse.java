@@ -14,15 +14,8 @@ public record KrakenResponse(String channel, @Nullable String type, @Nullable Co
     static final ObjectMapper mapper = new ObjectMapper()
             .findAndRegisterModules();  //  https://github.com/FasterXML/jackson-modules-java8?tab=readme-ov-file#registering-modules
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    record CoinData(
-            String symbol, CoinBookLevel[] bids, CoinBookLevel[] asks, @Nullable BigInteger checksum,
-            @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", timezone = "UTC")
-            @Nullable
-            Instant timestamp
-    ){}
+    record CoinData(String symbol, CoinBookLevel[] bids, CoinBookLevel[] asks, @Nullable BigInteger checksum, @Nullable Instant timestamp){}
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
     record CoinBookLevel(Double price, Double qty){}
 
     public static KrakenResponse parseMessage(String message) throws JsonProcessingException {
