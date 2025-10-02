@@ -3,6 +3,7 @@ package com.tradingsignals.ingestion;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tradingsignals.models.OrderBook;
+import org.eclipse.jetty.util.component.LifeCycle;
 import org.eclipse.jetty.websocket.api.Callback;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
@@ -63,6 +64,11 @@ public class KrakenConnector {
         subscribed = subscribe;
     }
 
+    public void closeWebsocket(){
+//        this.webSocketClient.close();
+        new Thread(() -> LifeCycle.stop(webSocketClient)).start();
+    }
+
     public void processMessage(KrakenResponse response){
 //        if (Objects.equals(response.channel(), "heartbeat")){
 //
@@ -80,7 +86,7 @@ public class KrakenConnector {
             try {
                 Thread.sleep(5000);
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                return;
             }
             System.out.println("Sending unsubscribe message");
             connector.toggleSubscription(false, symbols);
@@ -93,7 +99,7 @@ public class KrakenConnector {
                try {
                    message = queue.take();
                } catch (InterruptedException e) {
-                   throw new RuntimeException(e);
+                   return;
                }
                logger.info(message.toString());
            }
@@ -102,7 +108,7 @@ public class KrakenConnector {
 
         Thread.sleep(10_000);
 
-        connector.webSocketClient.close();
+        connector.closeWebsocket();
         processMessageThread.interrupt();
     }
 
