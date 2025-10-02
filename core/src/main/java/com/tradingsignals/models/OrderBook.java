@@ -1,5 +1,6 @@
 package com.tradingsignals.models;
 
+import java.time.Instant;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.Collections;
@@ -27,6 +28,7 @@ public class OrderBook {
     int depth;
     BookSide bids;
     BookSide asks;
+    Instant heartbeat;
 
     public enum Side {BIDS, ASKS};
 
