@@ -1,0 +1,11 @@
+{
+    "namespace": "tradingsignals.ingestion",
+    "type": "record",
+    "name": "OrderBookFeatures",
+    "fields": [
+        {"name": "symbol", "type": "string"},
+        {"name": "updateTime", "type": {"type": "long", "logicalType": "timestamp"}},
+        {"name": "bidAskSpread", "type": ["float", "null"]},
+        {"name": "orderImbalance", "type": ["float", "null"]}
+    ]
+}
