@@ -28,7 +28,7 @@ public class OrderBook {
     int depth;
     BookSide bids;
     BookSide asks;
-    Instant heartbeat;
+    public Instant updateTime;
 
     public enum Side {BIDS, ASKS};
 

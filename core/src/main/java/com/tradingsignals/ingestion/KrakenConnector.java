@@ -34,6 +34,7 @@ public class KrakenConnector {
     final Session webSocketSession;
     final BlockingQueue<KrakenResponse> messageQueue;
 
+    int depth = 10;  // hardcoded default from Kraken
     HashMap<String, OrderBook> orderBooks;
 
     public KrakenConnector() throws Exception {
@@ -69,11 +70,27 @@ public class KrakenConnector {
         new Thread(() -> LifeCycle.stop(webSocketClient)).start();
     }
 
-    public void processMessage(KrakenResponse response){
-//        if (Objects.equals(response.channel(), "heartbeat")){
-//
-//        }
-//        logger.info(response);
+    public void processMessage(KrakenResponse response) {
+        var channel = response.channel();
+        if (Objects.equals(channel, "heartbeat")) {
+            return;
+        }
+
+        if (!channel.equals("book") || (response.data() == null)) return;
+
+        for (var coinData : response.data()) {
+            var coin = coinData.symbol();
+
+            if (!this.orderBooks.containsKey(coin)) {
+                this.orderBooks.put(coin, new OrderBook(depth));
+            }
+            var book = this.orderBooks.get(coin);
+            book.applyUpdate(coinData.bids(), coinData.asks());
+        }
+    }
+
+    public void publishMessage(){
+
     }
 
     static void main() throws Exception {
@@ -95,16 +112,30 @@ public class KrakenConnector {
         var processMessageThread = new Thread(() -> {
            var queue = connector.messageQueue;
            while (true){
-               KrakenResponse message = null;
+               KrakenResponse message;
                try {
                    message = queue.take();
                } catch (InterruptedException e) {
                    return;
                }
                logger.info(message.toString());
+               connector.processMessage(message);
            }
         });
         processMessageThread.start();
+
+        var publishMessageThread = new Thread(() -> {
+            while (true) {
+                connector.publishMessage();
+
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+        publishMessageThread.start();
 
         Thread.sleep(10_000);
 

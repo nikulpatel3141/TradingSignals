@@ -3,6 +3,7 @@ package com.tradingsignals.ingestion;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tradingsignals.models.BookLevel;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
@@ -15,7 +16,7 @@ public record KrakenResponse(String channel, @Nullable String type, @Nullable Co
 
     record CoinData(String symbol, CoinBookLevel[] bids, CoinBookLevel[] asks, @Nullable BigInteger checksum, @Nullable Instant timestamp){}
 
-    record CoinBookLevel(Double price, Double qty){}
+    record CoinBookLevel (double price, double qty) implements BookLevel {}
 
     public static KrakenResponse parseMessage(String message) throws JsonProcessingException {
         return mapper.readValue(message, KrakenResponse.class);
